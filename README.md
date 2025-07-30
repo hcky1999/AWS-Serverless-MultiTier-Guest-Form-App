@@ -10,7 +10,7 @@ A real-world AWS portfolio project showcasing scalable, serverless architecture:
 
 ## Architecture
 
-![Diagram](architecture/diagram-placeholder.png)
+![Diagram](architecture/GuestApp-MultiTier.png)
 
 ## 🌐 Live Demo
 
