@@ -1,0 +1,13 @@
+# Node.js
+node_modules
+build
+.env
+
+# Lambda
+*.zip
+
+# OS crap
+.DS_Store
+
+# VSCode
+.vscode/

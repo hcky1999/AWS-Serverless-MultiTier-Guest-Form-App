@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Serverless Multi-Tier Guest App - Infra
+
+Resources:
+
+  GuestTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: guest-app-table
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  GuestBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub guest-app-frontend-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  GuestBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref GuestBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub 'arn:aws:s3:::${GuestBucket}/*'
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: guest-app-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: guest-app-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:Scan
+                Resource: !GetAtt GuestTable.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub 'arn:aws:s3:::${GuestBucket}/*'
+
+  GuestApiLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: guest-app-api
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs20.x
+      Code:
+        S3Bucket: guestbucket-lc
+        S3Key: backend-lambda.zip
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref GuestTable
+          BUCKET_NAME: !Ref GuestBucket
+
+  GuestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: guest-app-api
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  GuestApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref GuestApi
+      ParentId: !GetAtt GuestApi.RootResourceId
+      PathPart: guests
+
+  GuestApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref GuestApi
+      ResourceId: !Ref GuestApiResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GuestApiLambda.Arn}/invocations'
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  GuestApiOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref GuestApi
+      ResourceId: !Ref GuestApiResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  GuestApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - GuestApiMethod
+      - GuestApiOptionsMethod
+    Properties:
+      RestApiId: !Ref GuestApi
+      StageName: prod
+
+  LambdaInvokePerm:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GuestApiLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GuestApi}/*/*'
+
+Outputs:
+  WebsiteBucket: 
+    Value: !Ref GuestBucket
+  ApiEndpoint: 
+    Value: !Sub 'https://${GuestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/guests'
+  WebsiteURL: 
+    Value: !Sub 'http://${GuestBucket}.s3-website-${AWS::Region}.amazonaws.com'
+  TableName: 
+    Value: !Ref GuestTable
