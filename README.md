@@ -12,6 +12,13 @@ A real-world AWS portfolio project showcasing scalable, serverless architecture:
 
 ![Diagram](architecture/diagram-placeholder.png)
 
+## 🌐 Live Demo
+
+> ✅ [Visit the live app (S3 static website)](## 🌐 Live Demo
+
+> ✅ [Visit the live app (S3 static website)](http://guest-app-frontend-672566183195-us-east-1.s3-website-us-east-1.amazonaws.com)
+
+
 ## Benefits
 
 - Clean separation of layers: easier to manage, secure, and scale
@@ -32,3 +39,6 @@ A real-world AWS portfolio project showcasing scalable, serverless architecture:
 - See `/docs/benefits.md` for detailed benefits
 - See `/docs/costs.md` for estimated costs
 - See `/docs/deployment.md` for full deployment guide
+
+
+
