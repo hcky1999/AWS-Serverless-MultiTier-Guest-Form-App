@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Form, Button, Alert, Container } from "react-bootstrap";
 
 function App() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", city:"", state:"", country:"",message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,7 +22,7 @@ function App() {
         body: JSON.stringify(form)
       });
       setSubmitted(true);
-      setForm({ name: "", email: "", message: "" });
+      setForm({ name: "", email: "", city:"", state:"", country:"",message: "" });
     } catch (err) {
       setError("Submission failed. Please try again.");
     }
@@ -41,6 +41,18 @@ function App() {
         <Form.Group className="mb-3" controlId="email">
           <Form.Label>Email</Form.Label>
           <Form.Control name="email" type="email" value={form.email} onChange={handleChange} required />
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="city">
+          <Form.Label>City</Form.Label>
+          <Form.Control name="city" value={form.city} onChange={handleChange} />
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="state">
+          <Form.Label>State</Form.Label>
+          <Form.Control name="state" value={form.state} onChange={handleChange} />
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="country">
+          <Form.Label>Country</Form.Label>
+          <Form.Control name="country" value={form.country} onChange={handleChange} />
         </Form.Group>
         <Form.Group className="mb-3" controlId="message">
           <Form.Label>Message</Form.Label>

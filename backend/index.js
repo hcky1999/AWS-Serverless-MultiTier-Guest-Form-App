@@ -16,6 +16,9 @@ exports.handler = async (event) => {
       id: Date.now().toString(),
       name: body.name,
       email: body.email,
+      city: body.city || "",
+      state: body.state || "",
+      country: body.country || "",
       message: body.message,
       timestamp: new Date().toISOString()
     };
