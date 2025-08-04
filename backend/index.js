@@ -1,10 +1,8 @@
 
 const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient();
-const s3 = new AWS.S3();
 
 const TABLE_NAME = process.env.TABLE_NAME;
-const BUCKET_NAME = process.env.BUCKET_NAME;
 
 exports.handler = async (event) => {
   try {
