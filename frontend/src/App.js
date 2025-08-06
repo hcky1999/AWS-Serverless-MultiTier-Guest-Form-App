@@ -26,7 +26,8 @@ function App() {
     setSubmitted(false);
 
     try {
-      await fetch("https://r9g6zkslgc.execute-api.us-east-1.amazonaws.com/prod/guests", {
+      const apiEndpoint = process.env.REACT_APP_API_ENDPOINT || "https://r9g6zkslgc.execute-api.us-east-1.amazonaws.com/prod/guests";
+      await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
